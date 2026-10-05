@@ -25,19 +25,23 @@ CREATE TABLE IF NOT EXISTS STREAMLIT_APPS.DATA_MANAGEMENT.AUDIT_LOG_ADJUSTMENTS 
 -- Git repository + Streamlit objects (reuses the existing API integration)
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE GIT REPOSITORY STREAMLIT_APPS.DATA_MANAGEMENT.SALES_TENDER_ADJUSTMENTS
-  API_INTEGRATION = GITHUB_API_INTEGRATION
-  GIT_CREDENTIALS = <secret>
+  API_INTEGRATION = GIT_API_INTEGRATION
+  GIT_CREDENTIALS = STREAMLIT_APPS.DATA_MANAGEMENT.git_secret
   ORIGIN = 'https://github.com/rbl-biadmin/sales-tender-adjustments.git';
 
 CREATE OR REPLACE STREAMLIT STREAMLIT_APPS.DATA_MANAGEMENT.SALES_TENDER_ADJUSTMENTS_DEV
   ROOT_LOCATION = '@STREAMLIT_APPS.DATA_MANAGEMENT.SALES_TENDER_ADJUSTMENTS/branches/develop'
   MAIN_FILE = 'streamlit_app.py'
-  QUERY_WAREHOUSE = <WAREHOUSE>;
+  QUERY_WAREHOUSE = 'STREAMLIT_WH'
+  TITLE = 'Sales and Tender Adjustments (DEV)'
+  COMMENT = 'Sales and Tender Adjustments - DEV version';
 
 CREATE OR REPLACE STREAMLIT STREAMLIT_APPS.DATA_MANAGEMENT.SALES_TENDER_ADJUSTMENTS
   ROOT_LOCATION = '@STREAMLIT_APPS.DATA_MANAGEMENT.SALES_TENDER_ADJUSTMENTS/branches/main'
   MAIN_FILE = 'streamlit_app.py'
-  QUERY_WAREHOUSE = <WAREHOUSE>;
+  QUERY_WAREHOUSE = 'STREAMLIT_WH'
+  TITLE = 'Sales and Tender Adjustments'
+  COMMENT = 'Sales and Tender Adjustments - PROD version';
 
 -- ---------------------------------------------------------------------------
 -- Grants. Streamlit in Snowflake runs queries with the app OWNER's rights, so
