@@ -1,0 +1,10 @@
+name: app_environment
+channels:
+  # The only channel Streamlit in Snowflake allows
+  - snowflake
+dependencies:
+  - python=3.11.*
+  # Bare trailing '=' means "whatever version Snowflake provides". Pinning a
+  # specific version is the usual cause of an app that will not start.
+  - snowflake-snowpark-python=
+  - streamlit=

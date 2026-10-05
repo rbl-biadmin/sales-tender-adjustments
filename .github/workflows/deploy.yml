@@ -1,0 +1,61 @@
+# Secrets required: GH_PAT, SNOWFLAKE_PRIVATE_KEY, SNOWFLAKE_ACCOUNT,
+# SNOWFLAKE_USER, SNOWFLAKE_ROLE, SNOWFLAKE_WAREHOUSE
+name: Deploy to Snowflake Streamlit
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Needs write access — the next step pushes back
+          token: ${{ secrets.GH_PAT }}
+
+      # config.py is committed with the test database, so develop is always a
+      # test app. On main, rewrite the line and commit it back before fetching,
+      # so the prod app's checkout reads EDW_PROD. [skip ci] stops the push
+      # re-triggering this workflow forever.
+      - name: Set database to EDW_PROD for main branch
+        if: github.ref == 'refs/heads/main'
+        run: |
+          sed -i 's/DB_EDW = ".*"/DB_EDW = "EDW_PROD"/' config.py
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add config.py
+          git diff --cached --quiet || git commit -m "ci: set database to EDW_PROD for production [skip ci]"
+          git push
+
+      - name: Install Snowflake CLI
+        run: pip install snowflake-cli-labs
+
+      - name: Write private key to file
+        run: |
+          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > /tmp/snowflake_key.p8
+          chmod 600 /tmp/snowflake_key.p8
+
+      - name: Configure Snowflake connection
+        env:
+          SF_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SF_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SF_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+        run: |
+          python3 .github/scripts/create_config.py
+          chmod 0600 ~/.snowflake/config.toml
+
+      # Both environments share one Git repository object; the Streamlit objects
+      # point at different branches of it, so a single FETCH updates whichever
+      # app corresponds to the branch that triggered this run.
+      - name: Fetch Git Repo → app updates
+        run: |
+          snow sql \
+            --query "ALTER GIT REPOSITORY STREAMLIT_APPS.DATA_MANAGEMENT.SALES_TENDER_ADJUSTMENTS FETCH;" \
+            --connection default
