@@ -87,3 +87,12 @@ GRANT USAGE ON PROCEDURE EDW_TEST.MART_SALES.TENDER_ADJUSTMENTS(VARCHAR, NUMBER,
 
 -- Editors — granted directly to each user (utils/auth.py does not walk inheritance)
 GRANT ROLE RL_STREAMLIT_EDITOR TO USER "<user>";
+
+-- ---------------------------------------------------------------------------
+-- CI deploy role RL_STREAMLIT_ADMIN (the SNOWFLAKE_ROLE GitHub secret) — runs ALTER GIT REPOSITORY
+-- ... FETCH, which needs WRITE on the repository. CREATE OR REPLACE GIT
+-- REPOSITORY above drops these grants, so re-run this block whenever it runs.
+-- ---------------------------------------------------------------------------
+GRANT USAGE ON DATABASE STREAMLIT_APPS                 TO ROLE RL_STREAMLIT_ADMIN;
+GRANT USAGE ON SCHEMA STREAMLIT_APPS.DATA_MANAGEMENT   TO ROLE RL_STREAMLIT_ADMIN;
+GRANT READ, WRITE ON GIT REPOSITORY STREAMLIT_APPS.DATA_MANAGEMENT.SALES_TENDER_ADJUSTMENTS TO ROLE RL_STREAMLIT_ADMIN;
