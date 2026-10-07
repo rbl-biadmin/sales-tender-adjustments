@@ -55,11 +55,14 @@ PROC_BRAND_CODE = {
 # Measures — field name (as aliased in the read queries) →
 #   (grid label, satellite column, decimals)
 # The satellite column is where the value lands on commit; the field name is
-# what the read queries, the entry grids and the previews share.
+# what the read queries, the entry grids and the previews share. Satellite
+# names differ from the mart's (S_SALES_ADJUSTMENTS.SALE_COUNT / TOTAL_AMOUNT
+# become FACT_SALES_ADJUSTMENTS.LINE_COUNT / AMOUNT_NET), so never copy these
+# from the read queries.
 # ---------------------------------------------------------------------------
 SALES_MEASURES = {
-    "TRANSACTIONS":  ("Transactions",  "LINE_COUNT",      0),
-    "AMOUNT":        ("Amount",        "AMOUNT_NET",      2),
+    "TRANSACTIONS":  ("Transactions",  "SALE_COUNT",      0),
+    "AMOUNT":        ("Amount",        "TOTAL_AMOUNT",    2),
     "DELIVERY_FEES": ("Delivery Fees", "DELIVERY_CHARGE", 2),
     "BOTTLE_FEE":    ("Bottle Fee",    "BOTTLE_FEE",      2),
     "GIFT_CARD":     ("Gift Card",     "GIFT_CARD",       2),
