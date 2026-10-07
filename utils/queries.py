@@ -1,7 +1,8 @@
 """Read queries — all cached, shared by every tab.
 
-Loaded once per store/day and reused from cache by the entry grids, previews
-and commit summary, so the step-2 queries are not re-run as the user types.
+Loaded once per store/day (``load_store_day``) and reused by the entry grids,
+previews and commit summary, so the step-2 queries are not re-run as the user
+types.
 ``_session`` is underscore-prefixed so Streamlit does not try to hash it.
 
 st.cache_data is shared across ALL viewers of the app. The store list is
@@ -215,7 +216,32 @@ def store_hub_exists(_session, store_number, brand_id, division_id):
     return bool(rows and rows[0][0] > 0)
 
 
+_DAY_DATA_KEY = "_adj_day_data"
+
+
+def load_store_day(_session, sel):
+    """The four step-2 frames for the selected store/day, loaded once.
+
+    Held in session state until the store/day changes, a commit lands or the
+    user refreshes — the cache_data TTL alone re-ran all four queries on the
+    first interaction after it expired, mid-entry. Callers must not modify the
+    frames in place: every tab shares the same objects.
+    """
+    sig = (sel["store_key"], sel["date_key"])
+    held = st.session_state.get(_DAY_DATA_KEY)
+    if held is None or held[0] != sig:
+        held = (sig, {
+            "sales": load_sales(_session, *sig),
+            "tenders": load_tenders(_session, *sig),
+            "sales_adj": load_sales_adjustments(_session, *sig),
+            "tender_adj": load_tender_adjustments(_session, *sig),
+        })
+        st.session_state[_DAY_DATA_KEY] = held
+    return held[1]
+
+
 def clear_store_day_caches():
-    """Invalidate the per-store/day loaders after a commit."""
+    """Invalidate the per-store/day data after a commit or a manual refresh."""
+    st.session_state.pop(_DAY_DATA_KEY, None)
     for fn in (load_sales, load_tenders, load_sales_adjustments, load_tender_adjustments):
         fn.clear()

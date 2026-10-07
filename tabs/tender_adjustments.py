@@ -13,9 +13,7 @@ from utils.entries import (
     CHANNEL, channel_options, payment_options, render_entry_grid, build_preview,
     changed_mask, highlight_rows, preview_formats, with_total, number_config,
 )
-from utils.queries import (
-    load_tenders, load_tender_adjustments, load_channel_pairs, load_payment_types,
-)
+from utils.queries import load_store_day, load_channel_pairs, load_payment_types
 from utils.state import get_selection, nonce
 
 UI_KEYS = ["PAYMENT_TYPE", CHANNEL]
@@ -74,8 +72,8 @@ def render_tender_tab(session, is_editor):
             "- Blank cells count as 0. Add as many lines as you need.\n"
             "- ⚠️ Any existing tender adjustments for this store/day will be **overwritten**.")
 
-    base = load_tenders(session, sel["store_key"], sel["date_key"])
-    existing = load_tender_adjustments(session, sel["store_key"], sel["date_key"])
+    data = load_store_day(session, sel)
+    base, existing = data["tenders"], data["tender_adj"]
     pairs = load_channel_pairs(session, sel["store_key"])
     types = load_payment_types(session, sel["store_key"])
 

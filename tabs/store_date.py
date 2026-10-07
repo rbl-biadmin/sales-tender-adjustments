@@ -14,9 +14,7 @@ import streamlit as st
 
 from config import SALES_MEASURES, TENDER_MEASURES, GST_INCLUSIVE_DIVISIONS
 from utils.entries import with_total, number_config
-from utils.queries import (
-    load_stores, load_sales, load_tenders, load_sales_adjustments, load_tender_adjustments,
-)
+from utils.queries import load_stores, load_store_day, clear_store_day_caches
 from utils.state import get_selection, set_selection, has_entries
 
 _ALL = "All"
@@ -131,14 +129,18 @@ def render_store_date_tab(session, current_user):
         return
 
     st.divider()
-    st.markdown(selection_caption(sel))
+    head, refresh = st.columns([5, 1])
+    head.markdown(selection_caption(sel))
+    # The figures are loaded once per store/day; this is the only re-read
+    # besides a commit. Entries are kept — they are changes, not totals.
+    if refresh.button("🔄 Refresh figures", key="sel_refresh"):
+        clear_store_day_caches()
     if sel["division_name"] in GST_INCLUSIVE_DIVISIONS:
         st.caption("ℹ️ Guam store: Amount shown excludes GST; GST is in the Guam GST column.")
 
-    sales = load_sales(session, sel["store_key"], sel["date_key"])
-    tenders = load_tenders(session, sel["store_key"], sel["date_key"])
-    sales_adj = load_sales_adjustments(session, sel["store_key"], sel["date_key"])
-    tender_adj = load_tender_adjustments(session, sel["store_key"], sel["date_key"])
+    data = load_store_day(session, sel)
+    sales, tenders = data["sales"], data["tenders"]
+    sales_adj, tender_adj = data["sales_adj"], data["tender_adj"]
 
     sales_measures = dict(SALES_MEASURES)
     sales_measures.update({

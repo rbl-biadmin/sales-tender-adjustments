@@ -13,7 +13,7 @@ from utils.entries import (
     CHANNEL, channel_options, render_entry_grid, build_preview, changed_mask,
     highlight_rows, preview_formats, with_total, number_config,
 )
-from utils.queries import load_sales, load_sales_adjustments, load_channel_pairs
+from utils.queries import load_store_day, load_channel_pairs
 from utils.state import get_selection, nonce
 
 UI_KEYS = [CHANNEL]
@@ -94,8 +94,8 @@ def render_sales_tab(session, is_editor):
                   "from net sales on loading.")
     st.info(notes)
 
-    base = load_sales(session, sel["store_key"], sel["date_key"])
-    existing = load_sales_adjustments(session, sel["store_key"], sel["date_key"])
+    data = load_store_day(session, sel)
+    base, existing = data["sales"], data["sales_adj"]
     pairs = load_channel_pairs(session, sel["store_key"])
 
     key_config = {CHANNEL: st.column_config.SelectboxColumn(
