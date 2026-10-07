@@ -17,7 +17,7 @@ from config import (
     DB_DIM_STORES, DB_DIM_BRANDS, DB_DIM_DIVISIONS, DB_DIM_ORDER_CHANNELS,
     DB_DIM_DELIVERY_CHANNELS, DB_DIM_PAYMENT_TYPES, DB_RPT_DAILY_STORE_SALES,
     DB_RPT_TENDER_MEDIA, DB_FACT_SALES, DB_FACT_SALES_ADJ, DB_FACT_TENDER_ADJ,
-    DB_UDF_KEY_TO_DATE, DB_REF_BRANDS, DB_REF_DIVISIONS, DB_HUB_STORES,
+    DB_REF_BRANDS, DB_REF_DIVISIONS, DB_HUB_STORES,
     DB_HUB_ADJ_AUDIT, DB_SAT_ADJ_AUDIT, DB_HUB_SALES_ADJ, DB_LINK_SALES_ADJ,
     DB_HUB_TENDER_ADJ, DB_LINK_TENDER_ADJ,
 )
@@ -170,20 +170,25 @@ def load_tender_adjustments(_session, store_key, date_key):
     return _numeric(df, list(TENDER_MEASURES))
 
 
-@st.cache_data(ttl=600, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner="Loading channels…")
 def load_channel_pairs(_session, store_key):
-    """Order/delivery channel pairs this store has traded in the last 14 days."""
+    """Order/delivery channel pairs this store has traded in the last 14 days.
+
+    Filters on the raw date key, never a function of it: wrapping the column
+    (UDF_KEY_TO_DATE) stops Snowflake pruning, so every FACT_SALES row the store
+    ever had was converted and scanned — the slow first render of Step 3.
+    """
     return _session.sql(f"""
         SELECT DISTINCT o.ORDER_CHANNEL, d.DELIVERY_CHANNEL
         FROM {DB_FACT_SALES} f
         JOIN {DB_DIM_ORDER_CHANNELS}    o ON f.ORDER_CHANNEL_KEY    = o.ORDER_CHANNEL_KEY
         JOIN {DB_DIM_DELIVERY_CHANNELS} d ON f.DELIVERY_CHANNEL_KEY = d.DELIVERY_CHANNEL_KEY
         WHERE f.STORE_KEY = {q(store_key)}
-          AND {DB_UDF_KEY_TO_DATE}(f.SALE_REPORT_DATE_KEY) >= DATEADD(day, -{LOOKBACK_DAYS}, GETDATE())
+          AND f.SALE_REPORT_DATE_KEY >= TO_NUMBER(TO_CHAR(DATEADD(day, -{LOOKBACK_DAYS}, CURRENT_DATE()), 'YYYYMMDD'))
     """).to_pandas()
 
 
-@st.cache_data(ttl=600, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner="Loading payment types…")
 def load_payment_types(_session, store_key):
     """Payment types this store has taken in the last 14 days."""
     return _session.sql(f"""
