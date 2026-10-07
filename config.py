@@ -101,6 +101,8 @@ DB_FACT_TENDER_ADJ       = f"{DB_EDW}.MART_SALES.FACT_TENDER_ADJUSTMENTS"
 # Mart — stored procedures that rebuild the adjustment facts for a store/day
 DB_PROC_SALES_ADJ  = f"{DB_EDW}.MART_SALES.SALES_ADJUSTMENTS"
 DB_PROC_TENDER_ADJ = f"{DB_EDW}.MART_SALES.TENDER_ADJUSTMENTS"
+# Rebuilds the trading-days lookup; runs once after the section procedures
+DB_PROC_TRADING_DAYS = f"{DB_EDW}.MART_SALES.LK_TRADING_DAYS"
 
 # Data Vault
 DB_UDF_KEY_TO_DATE  = f"{DB_EDW}.DATAVAULT.UDF_KEY_TO_DATE"

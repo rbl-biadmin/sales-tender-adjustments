@@ -8,7 +8,8 @@ Per section (sales, tender) that has staged lines, in one transaction:
     4. MERGE  L_<SALES|TENDER>_ADJUSTMENTS   line ↔ store ↔ audit
     5. INSERT S_<SALES|TENDER>_ADJUSTMENTS   the values, every staged line
 
-then COMMIT, and only after that CALL the section's mart stored procedure. A
+then COMMIT, and only after that CALL the section's mart stored procedure,
+then LK_TRADING_DAYS once for the store/day. A
 failure anywhere before COMMIT rolls the whole thing back, so the procedures
 never run against a half-written day.
 
@@ -34,7 +35,7 @@ from config import (
     TENDER_SAT_DATE_COL, AUDIT_SAT_USER_COL, PROC_DIVISION_PREFIX, PROC_BRAND_CODE,
     DB_HUB_ADJ_AUDIT, DB_SAT_ADJ_AUDIT, DB_HUB_SALES_ADJ, DB_LINK_SALES_ADJ,
     DB_SAT_SALES_ADJ, DB_HUB_TENDER_ADJ, DB_LINK_TENDER_ADJ, DB_SAT_TENDER_ADJ,
-    DB_PROC_SALES_ADJ, DB_PROC_TENDER_ADJ,
+    DB_PROC_SALES_ADJ, DB_PROC_TENDER_ADJ, DB_PROC_TRADING_DAYS,
 )
 from utils.sql import q, num
 
@@ -211,15 +212,19 @@ def commit_adjustments(session, sel, staged, audit_note, current_user):
         result["db_error"] = str(e)
         return result
 
+    # Section procedures first, then the trading-days lookup once — it reads
+    # the adjustment facts they rebuild. It runs even if a section procedure
+    # failed: the vault is committed either way, and a retry re-runs them all.
     brand = proc_brand(sel)
-    for name in sections:
-        spec = SECTIONS[name]
+    calls = [(SECTIONS[name]["label"], SECTIONS[name]["proc"]) for name in sections]
+    calls.append(("Trading days", DB_PROC_TRADING_DAYS))
+    for label, proc in calls:
         try:
             rows = session.sql(
-                f"CALL {spec['proc']}({q(brand)}, {int(sel['date_key'])}, {q(sel['store_key'])})"
+                f"CALL {proc}({q(brand)}, {int(sel['date_key'])}, {q(sel['store_key'])})"
             ).collect()
             ret = rows[0][0] if rows else None
-            result["proc_results"].append(f"{spec['label']}: {ret if ret is not None else 'done'}")
+            result["proc_results"].append(f"{label}: {ret if ret is not None else 'done'}")
         except Exception as e:
-            result["proc_errors"].append(f"{spec['label']} refresh failed: {e}")
+            result["proc_errors"].append(f"{label} refresh failed: {e}")
     return result
