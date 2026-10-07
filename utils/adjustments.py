@@ -166,12 +166,14 @@ def _pinned_ldts(session):
 
     Read from Snowflake (never formatted from a Python clock) and passed back
     with its offset, so hub, link, satellites and audit all carry the same
-    instant regardless of session time zone.
+    instant regardless of session time zone. The vault LDTS columns are
+    TIMESTAMP_LTZ, and MERGE ... INSERT VALUES will not cast TZ to LTZ, so the
+    literal must be built as LTZ — the offset still pins the instant.
     """
     now = session.sql("SELECT CURRENT_TIMESTAMP()").collect()[0][0]
     if getattr(now, "tzinfo", None) is None:
         return "CURRENT_TIMESTAMP()"
-    return f"TO_TIMESTAMP_TZ({q(now.isoformat())})"
+    return f"TO_TIMESTAMP_LTZ({q(now.isoformat())})"
 
 
 def commit_adjustments(session, sel, staged, audit_note, current_user):
