@@ -101,8 +101,8 @@ def render_help_tab(current_user, current_role, is_editor):
         **Available to:** Editors and Admins only
 
         One row per commit attempt — who, when, which store/day, how many lines, the
-        audit reason, and the outcome (**SUCCESS**, **PARTIAL** — saved but the report
-        refresh failed, or **FAILED** — nothing saved). Export to CSV.
+        audit reason, and the outcome (**SUCCESS**, **PARTIAL** — saved but the mart
+        update failed, or **FAILED** — nothing saved). Export to CSV.
         """)
 
     # 4. How to make changes
@@ -115,6 +115,8 @@ def render_help_tab(current_user, current_role, is_editor):
     4. **Review & Commit** — enter the audit reason, tick the confirmation, click
        **Commit Changes**.
     5. A green message confirms the save, and the Store & Date tab shows the new figures.
+    6. Run a **Power BI refresh** to update the reporting. Adjustments dated more than
+       7 days ago need a manual partition refresh — contact Support.
 
     ### ⚠️ Adjustments overwrite, they do not add up
     Committing sales adjustments **replaces** all existing sales adjustments for that
@@ -144,9 +146,9 @@ def render_help_tab(current_user, current_role, is_editor):
         [log a Jira ticket]({_JIRA}) with the message shown.
         """)
 
-    with st.expander("\"Saved … but the reporting refresh failed\""):
+    with st.expander("\"Saved … but the mart update failed\""):
         st.markdown(f"""
-        The adjustment is stored, but the reports were not rebuilt. Click
+        The adjustment is stored, but the mart tables were not rebuilt. Click
         **Commit Changes** again to retry (it is safe — it writes the same values).
         If it fails again, [log a Jira ticket]({_JIRA}).
         """)

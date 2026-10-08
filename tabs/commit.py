@@ -97,8 +97,8 @@ def _report(session, sel, current_user, current_role, result, note):
                                note, "PARTIAL", msg)
         # No rerun: the entries stay on screen so Commit can simply be retried —
         # re-committing rewrites the same lines and re-runs the refresh.
-        st.warning(f"⚠️ Saved {saved} for {where} to the Data Vault, but the reporting "
-                   f"refresh failed, so the reports do not show it yet.\n\n{msg}\n\n"
+        st.warning(f"⚠️ Saved {saved} for {where} to the Data Vault, but the mart "
+                   f"update failed, so the figures do not show it yet.\n\n{msg}\n\n"
                    f"Click **Commit Changes** again to retry, or raise a Jira ticket.")
         if audit_err:
             st.error(audit_err)
@@ -106,8 +106,8 @@ def _report(session, sel, current_user, current_role, result, note):
 
     audit_err = log_commit(session, current_user, current_role, sel, n_sales, n_tender,
                            note, "SUCCESS", " | ".join(result["proc_results"]))
-    text = (f"✅ Saved {saved} for {where}. Reports refreshed — the Store & Date tab shows "
-            f"the new figures.\n\n{_powerbi_note(sel)}")
+    text = (f"✅ Saved {saved} for {where}. The Store & Date tab shows the new figures."
+            f"\n\n{_powerbi_note(sel)}")
     if audit_err:
         text += f"\n\n⚠️ {audit_err}"
     # Stashed, not written: the rerun below would discard it
@@ -147,7 +147,7 @@ def render_commit_tab(session, current_user, current_role, is_editor):
         st.warning("**Commit is not available yet:**\n\n" +
                    "\n".join(f"- {b}" for b in blockers))
 
-    st.caption(f"On commit, the reporting refresh runs for brand `{proc_brand(sel)}`, "
+    st.caption(f"On commit, the mart update runs for brand `{proc_brand(sel)}`, "
                f"date `{sel['date_key']}`.")
     clicked = st.button("✅ Commit Changes", type="primary", disabled=bool(blockers),
                         use_container_width=True, key=f"cm_commit_{n}")
@@ -165,6 +165,6 @@ def render_commit_tab(session, current_user, current_role, is_editor):
         return
 
     staged = {name: (plans[label] or {}).get("staged") for name, label, _k, _m in _SECTIONS}
-    with st.spinner("Saving adjustments and refreshing reports…"):
+    with st.spinner("Saving adjustments — this could take a few minutes…"):
         result = commit_adjustments(session, sel, staged, note.strip(), current_user)
     _report(session, sel, current_user, current_role, result, note.strip())
