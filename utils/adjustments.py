@@ -11,7 +11,7 @@ Per section (sales, tender) that has staged lines, in one transaction:
 then COMMIT, and only after that CALL the mart stored procedures: each
 section's fact procedure (SALES_ADJUSTMENTS / TENDER_ADJUSTMENTS), then
 LK_TRADING_DAYS once, then the aggregates (sales: AGG_DAILY_STORE_SALES,
-AGG_DAILY_MENU_SALES; tender: AGG_TENDER_MEDIA_SALES). A
+AGG_DAILY_MENU_SALES, AGG_DAILY_DISCOUNTS; tender: AGG_TENDER_MEDIA_SALES). A
 failure anywhere before COMMIT rolls the whole thing back, so the procedures
 never run against a half-written day.
 
@@ -38,7 +38,8 @@ from config import (
     DB_HUB_ADJ_AUDIT, DB_SAT_ADJ_AUDIT, DB_HUB_SALES_ADJ, DB_LINK_SALES_ADJ,
     DB_SAT_SALES_ADJ, DB_HUB_TENDER_ADJ, DB_LINK_TENDER_ADJ, DB_SAT_TENDER_ADJ,
     DB_PROC_SALES_ADJ, DB_PROC_TENDER_ADJ, DB_PROC_TRADING_DAYS,
-    DB_PROC_AGG_STORE_SALES, DB_PROC_AGG_MENU_SALES, DB_PROC_AGG_TENDER_MEDIA,
+    DB_PROC_AGG_STORE_SALES, DB_PROC_AGG_MENU_SALES, DB_PROC_AGG_DISCOUNTS,
+    DB_PROC_AGG_TENDER_MEDIA,
 )
 from utils.sql import q, num
 
@@ -57,7 +58,8 @@ SECTIONS = {
         "procs": [("Sales", DB_PROC_SALES_ADJ)],
         # Run after LK_TRADING_DAYS — the aggregates read the trading days
         "agg_procs": [("Daily store sales", DB_PROC_AGG_STORE_SALES),
-                      ("Daily menu sales", DB_PROC_AGG_MENU_SALES)],
+                      ("Daily menu sales", DB_PROC_AGG_MENU_SALES),
+                      ("Daily discounts", DB_PROC_AGG_DISCOUNTS)],
     },
     "tender": {
         "label": "Tender",
