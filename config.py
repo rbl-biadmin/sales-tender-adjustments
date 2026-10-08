@@ -72,6 +72,9 @@ SALES_MEASURES = {
     "GIFT_CARD":     ("Gift Card",     "GIFT_CARD",       2),
     "TB_FUND":       ("TB Fund",       "TB_FUND",         2),
     "DISCOUNT":      ("Discount",      "TOTAL_DISCOUNT",  2),
+    # Combined with Discount in the sales aggregations (RPT_DAILY_STORE_SALES
+    # has no promo column), so the sales preview folds it into Discount.
+    "PROMOS":        ("Promos",        "TOTAL_PROMO",     2),
 }
 TENDER_MEASURES = {
     "TENDER_AMOUNT": ("Tender Amount", "TENDER_AMOUNT", 2),

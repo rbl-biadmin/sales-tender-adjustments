@@ -137,6 +137,7 @@ def load_sales_adjustments(_session, store_key, date_key):
                f.GIFT_CARD       AS GIFT_CARD,
                f.TB_FUND         AS TB_FUND,
                f.TOTAL_DISCOUNT  AS DISCOUNT,
+               f.TOTAL_PROMO     AS PROMOS,
                aud.ADJUSTED_BY, aud.AUDIT_NOTE, aud.ADJUSTMENT_DATE, aud.ADJUSTMENT_SOURCE
         FROM {DB_FACT_SALES_ADJ} f
         JOIN {DB_DIM_DELIVERY_CHANNELS} d ON f.DELIVERY_CHANNEL_KEY = d.DELIVERY_CHANNEL_KEY

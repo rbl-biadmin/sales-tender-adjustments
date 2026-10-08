@@ -59,7 +59,10 @@ def render_help_tab(current_user, current_role, is_editor):
     with st.expander("💰 Sales Adjustments", expanded=False):
         st.markdown("""
         **Fields per line:** Order | Delivery Channel, Transactions, Amount, Delivery Fees,
-        Bottle Fee, Gift Card, TB Fund, Discount.
+        Bottle Fee, Gift Card, TB Fund, Discount, Promos.
+
+        - **Promos** are combined with Discount in reporting, so the preview and the
+          Store & Date sales figures show Discount **incl. Promos**.
 
         - Enter the **change** to apply. Values can be positive or negative.
         - Order and delivery channel are picked together, from the pairs this store has

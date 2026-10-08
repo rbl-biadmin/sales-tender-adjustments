@@ -143,6 +143,8 @@ def render_store_date_tab(session, current_user):
     sales_adj, tender_adj = data["sales_adj"], data["tender_adj"]
 
     sales_measures = dict(SALES_MEASURES)
+    # The reporting Discount already includes promos — there is no promo column
+    sales_measures["DISCOUNT"] = ("Discount (incl. Promos)",) + SALES_MEASURES["DISCOUNT"][1:]
     sales_measures.update({
         "GUAM_GST": ("Guam GST", None, 2),
         "TAX_AMOUNT": ("Tax", None, 2),

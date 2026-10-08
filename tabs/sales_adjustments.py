@@ -20,6 +20,17 @@ UI_KEYS = [CHANNEL]
 KEY_LABELS = {CHANNEL: "channel"}
 DATA_KEYS = ["ORDER_CHANNEL", "DELIVERY_CHANNEL"]
 MEASURES = list(SALES_MEASURES)
+# The reporting tables combine promos with discount, so the preview compares
+# like with like: promos folded into DISCOUNT, no separate promo column.
+PREVIEW_MEASURES = [m for m in MEASURES if m != "PROMOS"]
+
+
+def _fold_promos(df):
+    if df is None or df.empty or "PROMOS" not in df.columns:
+        return df
+    out = df.copy()
+    out["DISCOUNT"] = out["DISCOUNT"] + out["PROMOS"]
+    return out
 
 
 def _net(df):
@@ -34,8 +45,8 @@ def _preview(sel, base, existing, staged):
         st.caption("Enter at least one line above to see the before/after preview.")
         return
 
-    cur, new = build_preview(base, existing, staged, DATA_KEYS, MEASURES,
-                             extra_base_cols=["GUAM_GST"])
+    cur, new = build_preview(base, _fold_promos(existing), _fold_promos(staged), DATA_KEYS,
+                             PREVIEW_MEASURES, extra_base_cols=["GUAM_GST"])
     cur_net, new_net = _net(cur), _net(new)
 
     m1, m2, m3 = st.columns(3)
@@ -46,16 +57,18 @@ def _preview(sel, base, existing, staged):
     m3.metric("Amount", f"{new['AMOUNT'].sum():,.2f}",
               f"{new['AMOUNT'].sum() - cur['AMOUNT'].sum():+,.2f}")
 
-    out = new[MEASURES].copy()
+    out = new[PREVIEW_MEASURES].copy()
     out["CURRENT_NET"] = cur_net
     out["NEW_NET"] = new_net
     out["CHANGE"] = new_net - cur_net
     out = out.reset_index()
-    mask = changed_mask(cur, new, MEASURES).reset_index(drop=True)
-    num_cols = MEASURES + ["CURRENT_NET", "NEW_NET", "CHANGE"]
+    mask = changed_mask(cur, new, PREVIEW_MEASURES).reset_index(drop=True)
+    num_cols = PREVIEW_MEASURES + ["CURRENT_NET", "NEW_NET", "CHANGE"]
     out = with_total(out, "ORDER_CHANNEL", num_cols)
 
-    cfg = number_config(SALES_MEASURES, {f: f"New {lbl}" for f, (lbl, _c, _d) in SALES_MEASURES.items()})
+    labels = {f: f"New {lbl}" for f, (lbl, _c, _d) in SALES_MEASURES.items()}
+    labels["DISCOUNT"] = "New Discount (incl. Promos)"
+    cfg = number_config(SALES_MEASURES, labels)
     cfg["CURRENT_NET"] = st.column_config.NumberColumn("Current Net Sales", format="%.2f")
     cfg["NEW_NET"] = st.column_config.NumberColumn("New Net Sales", format="%.2f")
     cfg["CHANGE"] = st.column_config.NumberColumn("Change", format="%+.2f")
