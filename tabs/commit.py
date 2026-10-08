@@ -7,6 +7,8 @@ stored procedures. Every outcome ends in a visible message and an audit row.
 State prefix: 'cm' (widget keys, which embed the entry nonce so a successful
 commit clears the form).
 """
+from datetime import datetime, timedelta, timezone
+
 import streamlit as st
 
 from tabs.store_date import selection_caption
@@ -14,7 +16,7 @@ from utils.adjustments import commit_adjustments, proc_brand
 from utils.audit import log_commit
 from utils.entries import SOURCE, ZEROED, number_config
 from utils.queries import store_hub_exists, clear_store_day_caches
-from config import SALES_MEASURES, TENDER_MEASURES
+from config import SALES_MEASURES, TENDER_MEASURES, PBI_REFRESH_DAYS
 from utils.state import get_selection, nonce, reset_entries, stash_flash
 
 _SECTIONS = (("sales", "Sales", "_sa_plan", SALES_MEASURES),
@@ -56,6 +58,21 @@ def _blockers(session, sel, plans):
     return blockers
 
 
+def _powerbi_note(sel):
+    """What the user still has to do for Power BI to show the commit.
+
+    The Power BI refresh only reloads the recent partitions, counted from the
+    UTC date; anything older needs Support to refresh its partition by hand.
+    """
+    cutoff = datetime.now(timezone.utc).date() - timedelta(days=PBI_REFRESH_DAYS)
+    note = "📊 Run a **Power BI refresh** to update the reporting."
+    if sel["date"] < cutoff:
+        note += (f"\n\n⚠️ This adjustment is for {sel['date']:%d/%m/%Y}, before "
+                 f"{cutoff:%d/%m/%Y}, so a Power BI refresh will not pick it up — it needs "
+                 f"a **manual partition refresh**. Please contact Support.")
+    return note
+
+
 def _report(session, sel, current_user, current_role, result, note):
     """Turn the commit result into one visible outcome plus one audit row."""
     n_sales = result["written"].get("sales", 0)
@@ -89,7 +106,8 @@ def _report(session, sel, current_user, current_role, result, note):
 
     audit_err = log_commit(session, current_user, current_role, sel, n_sales, n_tender,
                            note, "SUCCESS", " | ".join(result["proc_results"]))
-    text = f"✅ Saved {saved} for {where}. Reports refreshed — the Store & Date tab shows the new figures."
+    text = (f"✅ Saved {saved} for {where}. Reports refreshed — the Store & Date tab shows "
+            f"the new figures.\n\n{_powerbi_note(sel)}")
     if audit_err:
         text += f"\n\n⚠️ {audit_err}"
     # Stashed, not written: the rerun below would discard it

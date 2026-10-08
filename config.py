@@ -34,6 +34,10 @@ CHANNEL_SEP = " | "
 # dropdown lists.
 LOOKBACK_DAYS = 14
 
+# The Power BI refresh reloads only the partitions for the last N days (UTC).
+# Adjustments dated earlier need Support to refresh their partition manually.
+PBI_REFRESH_DAYS = 7
+
 # Divisions whose sales Amount is entered incl. GST (GST is removed on load).
 GST_INCLUSIVE_DIVISIONS = {"Guam"}
 
@@ -101,6 +105,12 @@ DB_FACT_TENDER_ADJ       = f"{DB_EDW}.MART_SALES.FACT_TENDER_ADJUSTMENTS"
 # Mart — stored procedures that rebuild the adjustment facts for a store/day
 DB_PROC_SALES_ADJ  = f"{DB_EDW}.MART_SALES.SALES_ADJUSTMENTS"
 DB_PROC_TENDER_ADJ = f"{DB_EDW}.MART_SALES.TENDER_ADJUSTMENTS"
+# Rebuild the daily aggregates from the sales facts; run after
+# DB_PROC_SALES_ADJ and DB_PROC_TRADING_DAYS
+DB_PROC_AGG_STORE_SALES = f"{DB_EDW}.MART_SALES.AGG_DAILY_STORE_SALES"
+DB_PROC_AGG_MENU_SALES  = f"{DB_EDW}.MART_SALES.AGG_DAILY_MENU_SALES"
+# Same for tenders: after DB_PROC_TENDER_ADJ and DB_PROC_TRADING_DAYS
+DB_PROC_AGG_TENDER_MEDIA = f"{DB_EDW}.MART_SALES.AGG_TENDER_MEDIA_SALES"
 # Rebuilds the trading-days lookup; runs once after the section procedures
 DB_PROC_TRADING_DAYS = f"{DB_EDW}.MART_SALES.LK_TRADING_DAYS"
 
