@@ -1,12 +1,14 @@
 """Review & Commit tab — step 7.
 
 Summarises what the Sales and Tender tabs have staged, takes the mandatory
-audit reason, and commits: Data Vault writes in one transaction, then the mart
+approved Jira ticket and audit reason (stored together as "<ticket>: <reason>"),
+and commits: Data Vault writes in one transaction, then the mart
 stored procedures. Every outcome ends in a visible message and an audit row.
 
 State prefix: 'cm' (widget keys, which embed the entry nonce so a successful
 commit clears the form).
 """
+import re
 from datetime import datetime, timedelta, timezone
 
 import streamlit as st
@@ -18,6 +20,9 @@ from utils.entries import SOURCE, ZEROED, number_config
 from utils.queries import store_hub_exists, clear_store_day_caches
 from config import SALES_MEASURES, TENDER_MEASURES, PBI_REFRESH_DAYS
 from utils.state import get_selection, nonce, reset_entries, stash_flash
+
+# A Jira issue key: project key (letters/digits, starting with a letter), dash, number
+_JIRA_KEY = re.compile(r"[A-Z][A-Z0-9_]+-\d+")
 
 _SECTIONS = (("sales", "Sales", "_sa_plan", SALES_MEASURES),
              ("tender", "Tender", "_ta_plan", TENDER_MEASURES))
@@ -135,6 +140,12 @@ def render_commit_tab(session, current_user, current_role, is_editor):
 
     st.divider()
     n = nonce()
+    ticket = st.text_input("Jira ticket number (required)", key=f"cm_ticket_{n}",
+                           max_chars=30, placeholder="e.g. DATA-1234",
+                           help="The approved Jira ticket for this adjustment. It is saved "
+                                "at the start of the audit reason.")
+    approved = st.checkbox("I confirm this Jira ticket has the required approvals",
+                           key=f"cm_approved_{n}")
     note = st.text_area("Audit reason / description (required)", key=f"cm_note_{n}",
                         max_chars=1000, height=80,
                         placeholder="Why is this adjustment needed? e.g. POS outage 7 Sep, "
@@ -157,6 +168,13 @@ def render_commit_tab(session, current_user, current_role, is_editor):
     # Checked on click rather than by disabling the button: a text area only
     # reports its value when it loses focus, so a button disabled on "note is
     # empty" would ignore the first click after typing — silently.
+    ticket = ticket.strip().upper()
+    if not _JIRA_KEY.fullmatch(ticket):
+        st.error("Enter the Jira ticket number, e.g. DATA-1234.")
+        return
+    if not approved:
+        st.error("Tick the box to confirm the Jira ticket has the required approvals.")
+        return
     if not note.strip():
         st.error("Enter an audit reason before committing.")
         return
@@ -164,7 +182,10 @@ def render_commit_tab(session, current_user, current_role, is_editor):
         st.error("Tick the box to confirm you have checked the previews.")
         return
 
+    # The ticket leads the audit reason, so it is stored in the vault audit
+    # satellite and the app audit log, and shown on the Store & Date tab.
+    audit_note = f"{ticket}: {note.strip()}"
     staged = {name: (plans[label] or {}).get("staged") for name, label, _k, _m in _SECTIONS}
     with st.spinner("Saving adjustments — this could take a few minutes…"):
-        result = commit_adjustments(session, sel, staged, note.strip(), current_user)
-    _report(session, sel, current_user, current_role, result, note.strip())
+        result = commit_adjustments(session, sel, staged, audit_note, current_user)
+    _report(session, sel, current_user, current_role, result, audit_note)

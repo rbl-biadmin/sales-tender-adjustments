@@ -92,8 +92,11 @@ def render_help_tab(current_user, current_role, is_editor):
         st.markdown("""
         - Lists exactly what will be written, including any existing lines being set
           to zero.
-        - **Audit reason** is mandatory — it is stored with the adjustment and shown on
-          the Store & Date tab next time anyone looks at this store/day.
+        - **Jira ticket number** is mandatory (e.g. DATA-1234). The ticket must already
+          have the required approvals — tick the box to confirm it does.
+        - **Audit reason** is mandatory. It is saved as *ticket: reason* with the
+          adjustment and shown on the Store & Date tab next time anyone looks at this
+          store/day.
         - Tick the box to confirm you checked the previews, then **Commit Changes**.
         - You can commit sales only, tenders only, or both. A section with nothing
           entered is left untouched.
@@ -115,8 +118,8 @@ def render_help_tab(current_user, current_role, is_editor):
     1. **Store & Date** — pick the store and the day; check the current figures.
     2. **Sales Adjustments** — add a line per channel to change; check the Step 4 preview.
     3. **Tender Adjustments** — add a line per payment type/channel; check the Step 6 preview.
-    4. **Review & Commit** — enter the audit reason, tick the confirmation, click
-       **Commit Changes**.
+    4. **Review & Commit** — enter the approved Jira ticket number and confirm its
+       approvals, enter the audit reason, tick the confirmation, click **Commit Changes**.
     5. A green message confirms the save, and the Store & Date tab shows the new figures.
     6. Run a **Power BI refresh** to update the reporting. Adjustments dated more than
        7 days ago need a manual partition refresh — contact Support.
